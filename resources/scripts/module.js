@@ -19,7 +19,7 @@ function facesIndex(mid, fact) {
             fact: fact,
         }
     }).done(function(response) {
-        facesRenderPeoples(response.map, response.edit, response.title, response.meta);
+        facesRenderPeoples(response.map, response.edit, response.title, response.meta, response.url, response.note);
     });
 }
 
@@ -80,7 +80,7 @@ function facesClean(instance) {
     $('#faces-map').remove();
 }
 
-function facesRenderPeoples(map, edit, title, meta) {
+function facesRenderPeoples(map, edit, title, meta, url, note) {
     var instance = $.fancybox.getInstance();
 
     var $caption = instance.$refs.caption.find('.fancybox-caption__body');
@@ -166,13 +166,17 @@ function facesRenderPeoples(map, edit, title, meta) {
         $content.append(tmpl($('#faces-highlight-all-template').html(), {}));
     }
 
+    if (note) {
+        $content.prepend(`<div class="faces-note">${note}</div>`);
+    }
+
     $.each(meta, function(_, items) {
         $.each(items, function(_, item) {
             $content.prepend('<div class="faces-subtitle">' + item + '</div>');
         });
     });
 
-    $content.prepend('<div class="faces-title">' + title + '</div>');
+    $content.prepend(`<div class="faces-title"><a href="${url}">${title}</a></div>`);
 
     $caption.empty();
     $caption.append($content);
@@ -237,6 +241,9 @@ function facesBindCaptionActions($image, instance) {
                     }
                 );
             }
+            $dialog.modal('hide');
+        });
+        $dialog.find('[data-dismiss]').on('click', function() {
             $dialog.modal('hide');
         });
 
@@ -310,7 +317,9 @@ function facesBindToolbarActions($image, instance) {
                     }
                     $dialog.modal('hide');
                 });
-
+                $dialog.find('[data-dismiss]').on('click', function() {
+                    $dialog.modal('hide');
+                });
                 $('body').append($dialog);
 
                 $dialog.modal('show');

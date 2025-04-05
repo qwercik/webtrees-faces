@@ -69,6 +69,8 @@ class DataController implements RequestHandlerInterface
 
         return response([
             'success' => true,
+            'url' => $media->url(),
+            'note' => $media->getNote(),
             'title' => $this->getMediaTitle($media, $fact),
             'meta' => $this->module->settingEnabled(FacesModule::SETTING_META_NAME)
                 ? $this->getMediaMeta($media)
