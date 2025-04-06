@@ -3,6 +3,7 @@
 namespace UksusoFF\WebtreesModules\Faces\Http\Controllers;
 
 use Exception;
+use Fisharebest\Webtrees\Age;
 use Fisharebest\Webtrees\Fact;
 use Fisharebest\Webtrees\Http\Exceptions\HttpNotFoundException;
 use Fisharebest\Webtrees\Http\RequestHandlers\LinkMediaToRecordAction;
@@ -208,10 +209,12 @@ class DataController implements RequestHandlerInterface
                     'name' => $public
                         ? $this->getPersonDisplayName($person, $priorFact)
                         : I18N::translate('Private'),
-                    'age' => $this->getPersonDisplayAgePhoto($person, $priorFact),
-                    'life' => (strlen(trim(strip_tags($person->lifespan()))) > 10)  
-                            ? strip_tags($person->lifespan())
-                            : ' ',
+                    'age' => $public
+                        ? $this->getPersonDisplayAgePhoto($person, $priorFact)
+                        : I18N::translate('Private'),
+                    'life' => $public
+                        ? strip_tags($person->lifespan())
+                        : I18N::translate('Private'),
                 ]);
             }
             usort($result, function($compa, $compb) {
@@ -224,24 +227,18 @@ class DataController implements RequestHandlerInterface
 
     private function getPersonDisplayAgePhoto(Individual $person, ?Fact $fact): string
     {
-        if (strlen(trim(strip_tags($person->lifespan()))) > 6) {
-            $birthyear = substr(strip_tags($person->lifespan()),0,4) + 0;
-        }
-        else {
-            return I18N::translate('Missing Birth');
-        }
-        if (empty($fact)) {
-            return I18N::translate('Missing fact Date');
+        if ($fact === null) {
+            return '';
         }
 
-        $Photoyear =  substr($fact->attribute('DATE'),-4) + 0; 
-        
-        $birthyear = $Photoyear - $birthyear;
-        return $birthyear ;
+        $birthDate = $person->getBirthDate();
+        $factDate = $fact->date();
+        if ($birthDate === null || $factDate === null) {
+            return '';
+        }
+
+        return I18N::translate('Age at') . (string) new Age($birthDate, $factDate);
     }
-
-
-
 
     private function getPersonDisplayName(Individual $person, ?Fact $fact): string
     {
@@ -266,8 +263,9 @@ class DataController implements RequestHandlerInterface
 
     private function getMediaFacts(Media $media): Collection
     {
-        return $this->links->linkedIndividuals($media, 'OBJE')
-            ->flatMap(function(Individual $individual) use ($media) {
+        $mediaFileFacts = $media->facts(['FILE']);
+        $linkedRecords = $this->links->allLinkedRecords($media)
+            ->flatMap(function($individual) use ($media) {
                 return $individual
                     ->facts()
                     ->filter(function(Fact $fact) use ($media) {
@@ -275,7 +273,11 @@ class DataController implements RequestHandlerInterface
                             return $media->xref() === $m->xref();
                         })->isNotEmpty();
                     });
-            })
+            });
+
+        return $mediaFileFacts
+            ->concat($linkedRecords)
+            ->filter(fn($fact) => $fact->attribute('DATE') !== '' || $fact->attribute('PLAC') !== '')
             ->unique(function(Fact $fact) {
                 return $fact->attribute('DATE');
             });

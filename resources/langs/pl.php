@@ -45,4 +45,7 @@ return [
     // 'Enabled' => 'Enabled',
     'Disabled' => 'Wyłączony',
     'Highlight all' => 'Pokaż wszystkie',
+    'Age at' => 'Wiek na zdjęciu: ',
+    'Missing Birth' => 'Brakuje daty urodzenia',
+    'Missing fact Date' => 'Brakuje daty faktu',
 ];
