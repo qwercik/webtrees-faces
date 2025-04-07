@@ -48,4 +48,7 @@ return [
     'Age at' => 'Age at photo ',
     'Missing Birth' => 'Missing Birth Date',
     'Missing fact Date' => 'Missing Fact Date',
+    'Estimated date range' => 'Estimated date range: from %s to %s',
+    'Date after' => 'After %s',
+    'Date before' => 'Before %s',
 ];

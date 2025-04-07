@@ -4,6 +4,7 @@ namespace UksusoFF\WebtreesModules\Faces\Http\Controllers;
 
 use Exception;
 use Fisharebest\Webtrees\Age;
+use Fisharebest\Webtrees\Date;
 use Fisharebest\Webtrees\Fact;
 use Fisharebest\Webtrees\Http\Exceptions\HttpNotFoundException;
 use Fisharebest\Webtrees\Http\RequestHandlers\LinkMediaToRecordAction;
@@ -68,6 +69,12 @@ class DataController implements RequestHandlerInterface
             throw new HttpNotFoundException();
         }
 
+        $areas = $this->getMediaMap($media, $fact);
+        $people = $this->getPeopleOnPhoto($media->tree(), $areas);
+
+        $estimatedDateRangeStart = $this->estimateDateRangeStart($people);
+        $estimatedDateRangeEnd = $this->estimateDateRangeEnd($people);
+
         return response([
             'success' => true,
             'url' => $media->url(),
@@ -76,9 +83,49 @@ class DataController implements RequestHandlerInterface
             'meta' => $this->module->settingEnabled(FacesModule::SETTING_META_NAME)
                 ? $this->getMediaMeta($media)
                 : [],
-            'map' => $this->getMediaMapForTree($media, $fact),
+            'map' => $this->getMediaMapForTree($media, $areas, $people),
             'edit' => $media->canEdit(),
+            'estimated_date_range' => $this->formatDateRange($estimatedDateRangeStart, $estimatedDateRangeEnd),
         ]);
+    }
+
+    private function formatDateRange(?Date $estimatedDateRangeStart, ?Date $estimatedDateRangeEnd): string
+    {
+        if ($estimatedDateRangeStart !== null && $estimatedDateRangeEnd !== null) {
+            return I18N::translate('Estimated date range', $estimatedDateRangeStart->display(), $estimatedDateRangeEnd->display());
+        }
+
+        if ($estimatedDateRangeStart !== null) {
+            return I18N::translate('Date after', $estimatedDateRangeStart->display());
+        }
+
+        if ($estimatedDateRangeEnd !== null) {
+            return I18N::translate('Date before', $estimatedDateRangeEnd->display());
+        }
+
+        return '';
+    }
+
+    private function estimateDateRangeStart(array $people): ?Date
+    {
+        $birthDates = array_filter(array_map(fn($person) => $person->getBirthDate() , $people), fn($date) => $date->isOk());
+        if (empty($birthDates)) {
+            return null;
+        }
+
+        usort($birthDates, [Date::class, 'compare']);
+        return end($birthDates);
+    }
+
+    private function estimateDateRangeEnd(array $people): ?Date
+    {
+        $deathDates = array_filter(array_map(fn($person) => $person->getDeathDate(), $people), fn($date) => $date->isOk());
+        if (empty($deathDates)) {
+            return null;
+        }
+
+        usort($deathDates, [Date::class, 'compare']);
+        return head($deathDates);
     }
 
     private function attach(Request $request, Media $media, string $fact): Response
@@ -174,13 +221,22 @@ class DataController implements RequestHandlerInterface
         return $fact;
     }
 
-    private function getMediaMapForTree(Media $media, string $fact): array
+    private function getPeopleOnPhoto(Tree $tree, array $areas): array
     {
-        $result = [];
-        $pids = [];
-        $areas = $this->getMediaMap($media, $fact);
+        $pids = array_map(fn($area) => $area['pid'], $areas);
+        $individualFactory = Registry::individualFactory();
+   
+        return $this->module->query->getIndividualsDataByTreeAndPids((string)$tree->id(), $pids)
+            ->map(fn($row) => $individualFactory->make($row->xref, $tree, $row->gedcom))
+            ->filter(fn($person) => $person !== null)
+            ->toArray();
+    }
+
+    private function getMediaMapForTree(Media $media, array $areas, array $people): array
+    {
         $priorFact = $this->getMediaFacts($media)->first();
 
+        $result = [];
         foreach ($areas as $area) {
             $pid = (string) $area['pid'];
             $result[$pid] = [
@@ -190,37 +246,29 @@ class DataController implements RequestHandlerInterface
                 'life' => '',
                 'coords' => $area['coords'],
             ];
-            $pids[] = $pid;
         }
 
-        if (!empty($result)) {
-            foreach ($this->module->query->getIndividualsDataByTreeAndPids((string) $media->tree()->id(), $pids) as $row) {
-                $person = Registry::individualFactory()->make($row->xref, $media->tree(), $row->gedcom);
-                if ($person === null) {
-                    continue;
-                }
-
-                $public = $person->canShowName();
-
-                $result[$row->xref] = array_merge($result[$row->xref], [
-                    'link' => $public
-                        ? $person->url()
-                        : null,
-                    'name' => $public
-                        ? $this->getPersonDisplayName($person, $priorFact)
-                        : I18N::translate('Private'),
-                    'age' => $public
-                        ? $this->getPersonDisplayAgePhoto($person, $priorFact)
-                        : I18N::translate('Private'),
-                    'life' => $public
-                        ? strip_tags($person->lifespan())
-                        : I18N::translate('Private'),
-                ]);
-            }
-            usort($result, function($compa, $compb) {
-                return $compa['coords'][0] - $compb['coords'][0];
-            });
+        foreach ($people as $person) {
+            $xref = $person->xref();
+            $public = $person->canShowName();
+            $result[$xref] = array_merge($result[$xref], [
+                'link' => $public
+                    ? $person->url()
+                    : null,
+                'name' => $public
+                    ? $this->getPersonDisplayName($person, $priorFact)
+                    : I18N::translate('Private'),
+                'age' => $public
+                    ? $this->getPersonDisplayAgePhoto($person, $priorFact)
+                    : I18N::translate('Private'),
+                'life' => $public
+                    ? strip_tags($person->lifespan())
+                    : I18N::translate('Private'),
+            ]);
         }
+        usort($result, function($compa, $compb) {
+            return $compa['coords'][0] - $compb['coords'][0];
+        });
 
         return $result;
     }
@@ -287,10 +335,14 @@ class DataController implements RequestHandlerInterface
     {
         return $this->getMediaFacts($media)
             ->map(function(Fact $fact) {
-                return array_filter([
-                    $fact->attribute('PLAC'),
-                    $fact->attribute('DATE'),
-                ]);
+                $meta = [];
+                foreach (['DATE', 'PLAC'] as $name) {
+                    $value = $fact->attribute($name);
+                    if ($value !== '') {
+                        $meta[$name] = $value;
+                    }
+                }
+                return $meta;
             })
             ->toArray();
     }

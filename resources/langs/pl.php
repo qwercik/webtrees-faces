@@ -48,4 +48,7 @@ return [
     'Age at' => 'Wiek na zdjęciu: ',
     'Missing Birth' => 'Brakuje daty urodzenia',
     'Missing fact Date' => 'Brakuje daty faktu',
+    'Estimated date range' => 'Oszacowana data: pomiędzy %s a %s',
+    'Date after' => 'Po %s',
+    'Date before' => 'Przed %s',
 ];

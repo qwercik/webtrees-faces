@@ -19,7 +19,7 @@ function facesIndex(mid, fact) {
             fact: fact,
         }
     }).done(function(response) {
-        facesRenderPeoples(response.map, response.edit, response.title, response.meta, response.url, response.note);
+        facesRenderPeoples(response.map, response.edit, response.title, response.meta, response.url, response.note, response.estimated_date_range);
     });
 }
 
@@ -80,7 +80,7 @@ function facesClean(instance) {
     $('#faces-map').remove();
 }
 
-function facesRenderPeoples(map, edit, title, meta, url, note) {
+function facesRenderPeoples(map, edit, title, meta, url, note, estimated_date_range) {
     var instance = $.fancybox.getInstance();
 
     var $caption = instance.$refs.caption.find('.fancybox-caption__body');
@@ -170,12 +170,20 @@ function facesRenderPeoples(map, edit, title, meta, url, note) {
         $content.prepend(`<div class="faces-note">${note}</div>`);
     }
 
+    let show_estimated_date_range = true;
     $.each(meta, function(_, items) {
-        $.each(items, function(_, item) {
+        $.each(items, function(name, item) {
+            if (name === 'DATE') {
+                show_estimated_date_range = false;
+            }
+
             $content.prepend('<div class="faces-subtitle">' + item + '</div>');
         });
     });
-
+    if (show_estimated_date_range) {
+        $content.prepend('<div class="faces-subtitle">' + estimated_date_range + '</div>');
+    }
+ 
     $content.prepend(`<div class="faces-title"><a href="${url}">${title}</a></div>`);
 
     $caption.empty();
