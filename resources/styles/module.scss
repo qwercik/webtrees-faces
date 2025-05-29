@@ -1,5 +1,9 @@
 @import "~@fancyapps/fancybox/dist/jquery.fancybox.css";
 
+.modal {
+    --bs-modal-width: 900px;
+}
+
 $fancybox-z-index: 99992;
 $color-light: #f1ecec;
 $color-dark: #444;

@@ -13,18 +13,25 @@ use Fisharebest\Webtrees\Media;
 use Fisharebest\Webtrees\MediaFile;
 use Fisharebest\Webtrees\Registry;
 use Fisharebest\Webtrees\Services\TreeService;
+use Fisharebest\Webtrees\Site;
+use Fisharebest\Webtrees\Validator;
+use Komputeryk\Webtrees\JobQueue\JobQueueRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface;
+use UksusoFF\WebtreesModules\Faces\Exceptions\SznupaException;
 use UksusoFF\WebtreesModules\Faces\Helpers\AppHelper;
+use UksusoFF\WebtreesModules\Faces\Helpers\SznupaHelper;
 use UksusoFF\WebtreesModules\Faces\Modules\FacesModule;
+use UksusoFF\WebtreesModules\Faces\SznupaApi;
 
 class AdminController implements RequestHandlerInterface
 {
     use ViewResponseTrait;
 
     public const ROUTE_PREFIX = 'faces-admin';
+    public const SZNUPA_API_KEY_PLACEHOLDER = 'It\'s not a valid api key';
 
     protected FacesModule $module;
 
@@ -71,6 +78,7 @@ class AdminController implements RequestHandlerInterface
 
     private function config(Request $request): Response
     {
+        $this->updateSznupaConfig($request);
         return $this->viewResponse($this->module->name() . '::admin/config', [
             'title' => $this->module->title(),
             'tree' => null,
@@ -123,6 +131,7 @@ class AdminController implements RequestHandlerInterface
                 $this->module->assetUrl('build/vendor.min.js'),
                 $this->module->assetUrl('build/admin.min.js'),
             ],
+            'sznupa' => $this->getSznupaConfig(),
         ]);
     }
 
@@ -279,8 +288,9 @@ class AdminController implements RequestHandlerInterface
             (int) $request->getQueryParams()['tid'],
             $request->getQueryParams()['mid'],
             (int) $request->getQueryParams()['order'],
+            '[]',
             null,
-            null
+            true
         );
 
         return response([
@@ -310,5 +320,34 @@ class AdminController implements RequestHandlerInterface
             'message' => I18N::plural('%s record', '%s records', $count, I18N::number($count))
                 . ' ' . I18N::plural('has been deleted', 'have been deleted', $count, I18N::number($count)) . '.',
         ]);
+    }
+
+    private function getSznupaConfig(): array
+    {
+        $apiKey = Site::getPreference('sznupa_api_key');
+        return [
+            'apiUrl' => Site::getPreference('sznupa_api_url'),
+            'apiKey' => empty($apiKey) ? '' : self::SZNUPA_API_KEY_PLACEHOLDER,
+            'isConfigured' => SznupaHelper::isConfigured(),
+        ];
+    }
+
+    private function updateSznupaConfig(Request $request): void
+    {
+        if ($request->getMethod() !== 'POST') {
+            return;
+        }
+
+        $apiUrl = Validator::parsedBody($request)->string('sznupa_api_url', '');
+        $apiKey = Validator::parsedBody($request)->string('sznupa_api_key', self::SZNUPA_API_KEY_PLACEHOLDER);
+
+        Site::setPreference('sznupa_api_url', $apiUrl);
+        if ($apiKey !== self::SZNUPA_API_KEY_PLACEHOLDER) {
+            Site::setPreference('sznupa_api_key', $apiKey);
+        }
+
+        if (SznupaHelper::isConfigured()) {
+            JobQueueRepository::schedule('sznupa-scheduling');
+        }
     }
 }

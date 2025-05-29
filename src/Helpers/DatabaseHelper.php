@@ -20,26 +20,15 @@ class DatabaseHelper
             ->get();
     }
 
-    public function getMediaMap(
-        int $tree,
-        string $media,
-        int $order
-    ): ?string {
-        return DB::table('media_faces')
-            ->where('f_m_id', '=', $media)
-            ->where('f_m_order', '=', $order)
-            ->where('f_m_tree', '=', $tree)
-            ->value('f_coordinates');
-    }
-
     public function setMediaMap(
         int $tree,
         string $media,
         int $order,
+        string $map,
         ?string $filename = null,
-        ?string $map = null
+        bool $delete = false
     ): ?int {
-        if ($map === null) {
+        if ($delete) {
             return DB::table('media_faces')
                 ->where('f_m_id', '=', $media)
                 ->where('f_m_order', '=', $order)
@@ -55,7 +44,6 @@ class DatabaseHelper
             'f_coordinates' => $map,
             'f_m_filename' => $filename,
         ]);
-
         return null;
     }
 

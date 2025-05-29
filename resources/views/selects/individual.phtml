@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+use Fisharebest\Webtrees\Individual;
+use Fisharebest\Webtrees\MediaFile;
+use UksusoFF\WebtreesModules\Faces\Helpers\GedcomHelper;
+
+/**
+ * @var Individual|string $individual
+ */
+
+$notes = [];
+$display_params = [];
+$full_name = $individual;
+if ($individual instanceof Individual) {
+    $full_name = $individual->fullName();
+    $media_file = $individual->findHighlightedMediaFile();
+    if ($media_file !== null) {
+        $display_params = $individual->getThumbnailDisplayParams($media_file, 0);
+    }
+
+    
+    if ($individual->getBirthDate()->isOK() || $individual->getDeathDate()->isOK()) {
+        $notes[] = $individual->lifespan();
+    }
+    
+    foreach ($individual->childFamilies() as $family) {
+        $father = $family->husband();
+        $mother = $family->wife();
+    
+        $father_name = $father !== null ? GedcomHelper::getBirthName($father) : '?';
+        $mother_name = $mother !== null ? GedcomHelper::getBirthName($mother) : '?';
+        if ($father_name !== '?' || $mother_name !== '?') {
+            $notes[] = "{$father_name} i {$mother_name}";
+        }
+        break;
+    }
+} else {
+    $media_file = null;
+}
+
+$notes_text = !empty($notes) ? ' (' . implode(', ', $notes) . ')' : '';
+?>
+
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <?php if ($media_file instanceof MediaFile) : ?>
+            <?= $media_file->displayImage(30, 40, 'crop', [], $display_params) ?>&nbsp;
+        <?php endif; ?>
+        <?= $full_name . $notes_text ?>
+    </div>
+    <div>
+        <?php if (isset($probability)) : ?>
+            <i style="color: #777"><?= $probability ?>%</i>
+        <?php endif ?>
+    </div>
+</div>

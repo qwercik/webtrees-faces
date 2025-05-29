@@ -28,6 +28,8 @@ use UksusoFF\WebtreesModules\Faces\Helpers\DatabaseHelper;
 use UksusoFF\WebtreesModules\Faces\Helpers\MediaHelper;
 use UksusoFF\WebtreesModules\Faces\Http\Controllers\AdminController;
 use UksusoFF\WebtreesModules\Faces\Http\Controllers\DataController;
+use UksusoFF\WebtreesModules\Faces\Job\SznupaIndexingJob;
+use UksusoFF\WebtreesModules\Faces\Job\SznupaSchedulingJob;
 
 class FacesModule extends AbstractModule implements ModuleCustomInterface, ModuleGlobalInterface, ModuleConfigInterface, ModuleTabInterface, MiddlewareInterface
 {
@@ -36,7 +38,7 @@ class FacesModule extends AbstractModule implements ModuleCustomInterface, Modul
     use ModuleConfigTrait;
     use ModuleTabTrait;
 
-    public const SCHEMA_VERSION = 7;
+    public const SCHEMA_VERSION = 8;
 
     public const CUSTOM_VERSION = '2.7.3';
 
@@ -64,7 +66,12 @@ class FacesModule extends AbstractModule implements ModuleCustomInterface, Modul
 
     public function boot(): void
     {
+        $container = Registry::container();
+        $container->set('sznupa-indexing', new SznupaIndexingJob($this));
+        $container->set('sznupa-scheduling', new SznupaSchedulingJob($this));
+
         View::registerNamespace($this->name(), $this->resourcesFolder() . 'views/');
+        View::registerCustomView('::selects/individual', $this->name() . '::selects/individual');
 
         $router = AppHelper::get(RouterContainer::class);
         assert($router instanceof RouterContainer);

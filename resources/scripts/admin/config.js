@@ -85,4 +85,14 @@ $(document).ready(function() {
                 });
             }
         });
+
+    $page.find('#sznupa-config').on('click', function() {
+        const $dialog = $(tmpl($('#sznupa-config-template').html(), {}));
+        $dialog.find('[data-dismiss]').on('click', function() {
+            $dialog.modal('hide');
+            $dialog.remove();
+        });
+        $('body').append($dialog);
+        $dialog.modal('show');
+    });
 });
