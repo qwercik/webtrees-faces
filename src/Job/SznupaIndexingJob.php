@@ -8,14 +8,14 @@ use Fisharebest\Webtrees\Registry;
 use Fisharebest\Webtrees\Services\GedcomImportService;
 use Fisharebest\Webtrees\Services\TreeService;
 use Komputeryk\Webtrees\JobQueue\Job;
-use Throwable;
-use UksusoFF\WebtreesModules\Faces\Exceptions\SznupaUnavailableException;
+use Komputeryk\Webtrees\JobQueue\JobQueue;
 use UksusoFF\WebtreesModules\Faces\Helpers\SznupaHelper;
 use UksusoFF\WebtreesModules\Faces\Modules\FacesModule;
 use UksusoFF\WebtreesModules\Faces\Repository\MediaFileRepository;
 use UksusoFF\WebtreesModules\Faces\SznupaApi;
+use UksusoFF\WebtreesModules\Faces\Exceptions\SznupaUnavailableException;
 
-final class SznupaIndexingJob extends AbstractJob
+final class SznupaIndexingJob
 {
     protected TreeService $treeService;
     protected MediaFileRepository $mediaFileRepository;
@@ -29,33 +29,23 @@ final class SznupaIndexingJob extends AbstractJob
         $this->mediaFileRepository = new MediaFileRepository($this->module);
     }
 
-    public function handleTaskSafe(Job $task): array
+    public function run(Job $job): void
     {
-        if ($this->skip) {
-            return ['status' => 'new'];
-        }
-
         try {
-            $this->handleTask($task);
-            return ['status' => 'success'];
-        } catch (SznupaUnavailableException) {
-            $this->skip = true;
-            return ['status' => 'new'];
-        } catch (Throwable $e) {
-            return [
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ];
+            $this->runInternal($job);
+        } catch (SznupaUnavailableException $e) {
+            JobQueue::schedule($job, 5 * 60);
+            throw $e;
         }
     }
 
-    public function handleTask(Job $task): void
+    public function runInternal(Job $task): void
     {
         $api = SznupaApi::create();
-        $id = (int)$task->data['f_id'];
-        $regenerate = $task->data['regenerate'] ?? false;
-        $del_sznupa_id = $task->data['del_sznupa_id'] ?? null;
-        $del_pid = $task->data['del_pid'] ?? null;
+        $id = (int)$task->params['f_id'];
+        $regenerate = $task->params['regenerate'] ?? false;
+        $del_sznupa_id = $task->params['del_sznupa_id'] ?? null;
+        $del_pid = $task->params['del_pid'] ?? null;
 
         $data = $this->mediaFileRepository->getDataById($id);
         if ($data === null) {

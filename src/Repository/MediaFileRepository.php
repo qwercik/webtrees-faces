@@ -31,7 +31,7 @@ class MediaFileRepository
         }
 
         return new MediaFileData(
-            id: $data->f_id,
+            id: (int)$data->f_id,
             mediaId: $data->f_m_id,
             filename: $data->f_m_filename,
             order: (int)$data->f_m_order,
@@ -54,7 +54,7 @@ class MediaFileRepository
         }
 
         return new MediaFileData(
-            id: $row->f_id,
+            id: (int)$row->f_id,
             mediaId: $media,
             filename: $row->f_m_filename,
             order: $order,
@@ -78,5 +78,21 @@ class MediaFileRepository
             ->whereNull('f_sznupa_id')
             ->pluck('f_id')
             ->toArray();
+    }
+
+    public function insertFacesData(
+        int $tree,
+        string $media,
+        int $order,
+        string $filename
+    ): int
+    {
+        return DB::table('media_faces')->insertGetId([
+            'f_m_id' => $media,
+            'f_m_order' => $order,
+            'f_m_tree' => $tree,
+            'f_coordinates' => json_encode([]),
+            'f_m_filename' => $filename,
+        ]);
     }
 }

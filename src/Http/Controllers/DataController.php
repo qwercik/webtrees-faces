@@ -17,7 +17,8 @@ use Fisharebest\Webtrees\Services\LinkedRecordService;
 use Fisharebest\Webtrees\Tree;
 use Fisharebest\Webtrees\Webtrees;
 use Illuminate\Support\Collection;
-use Komputeryk\Webtrees\JobQueue\JobQueueRepository;
+use Komputeryk\Webtrees\JobQueue\Job;
+use Komputeryk\Webtrees\JobQueue\JobQueue;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -386,7 +387,7 @@ class DataController implements RequestHandlerInterface
             SznupaHelper::setWarning(I18N::translate('LBL_SZNUPA_ANALYZE_QUEUED'));
         }
 
-        JobQueueRepository::schedule('sznupa-indexing', $params);
+        JobQueue::schedule(Job::create('sznupa/index', $params));
 
         return response([
             'success' => true,
@@ -447,7 +448,8 @@ class DataController implements RequestHandlerInterface
         } else {
             $params['del_pid'] = $pid;
         }
-        JobQueueRepository::schedule('sznupa-indexing', $params);
+
+        JobQueue::schedule(Job::create('sznupa/index', $params));
     }
 
     private function updateImageInSznupa(MediaFile $file, MediaFileData $data): void
@@ -462,7 +464,7 @@ class DataController implements RequestHandlerInterface
             }
         }
 
-        JobQueueRepository::schedule('sznupa-indexing', ['f_id' => $data->id]);
+        JobQueue::schedule(Job::create('sznupa/index', ['f_id' => $data->id]));
     }
 
     private function getMedia(Request $request): Media

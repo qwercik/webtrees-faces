@@ -67,8 +67,7 @@ class FacesModule extends AbstractModule implements ModuleCustomInterface, Modul
     public function boot(): void
     {
         $container = Registry::container();
-        $container->set('sznupa-indexing', new SznupaIndexingJob($this));
-        $container->set('sznupa-scheduling', new SznupaSchedulingJob($this));
+        $container->set('sznupa/index', new SznupaIndexingJob($this));
 
         View::registerNamespace($this->name(), $this->resourcesFolder() . 'views/');
         View::registerCustomView('::selects/individual', $this->name() . '::selects/individual');

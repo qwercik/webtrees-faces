@@ -7,7 +7,7 @@ namespace UksusoFF\WebtreesModules\Faces\Entity;
 final class MediaFileData
 {
     public function __construct(
-        public string $id,
+        public int $id,
         public string $mediaId,
         public string $filename,
         public int $order,

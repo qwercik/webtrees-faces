@@ -345,9 +345,5 @@ class AdminController implements RequestHandlerInterface
         if ($apiKey !== self::SZNUPA_API_KEY_PLACEHOLDER) {
             Site::setPreference('sznupa_api_key', $apiKey);
         }
-
-        if (SznupaHelper::isConfigured()) {
-            JobQueueRepository::schedule('sznupa-scheduling');
-        }
     }
 }
