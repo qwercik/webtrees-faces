@@ -169,13 +169,13 @@ use Fisharebest\Webtrees\View;
                 <div class="modal-body">
                     <h3 class="mb-3">Sznupa</h3>
                     <div class="row mb-3">
-                        <label for="sznupa-api-url" class="col-sm-3 col-form-label">API URL</label>
+                        <label for="sznupa-api-url" class="col-sm-3 col-form-label"><?= I18N::translate('URL') ?></label>
                         <div class="col-sm-9">
                             <input type="url" class="form-control" id="sznupa-api-url" name="sznupa_api_url" value="<?= $sznupa['apiUrl'] ?>">
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label for="sznupa-api-key" class="col-sm-3 col-form-label">API KEY</label>
+                        <label for="sznupa-api-key" class="col-sm-3 col-form-label"><?= I18N::translate('API key') ?></label>
                         <div class="col-sm-9">
                             <input type="password" class="form-control" id="sznupa-api-key" name="sznupa_api_key" value="<?= $sznupa['apiKey'] ?>">
                         </div>
@@ -184,10 +184,10 @@ use Fisharebest\Webtrees\View;
 
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-dismiss="modal">
-                        <?= I18N::translate('Anuluj') ?>
+                        <?= I18N::translate('Cancel') ?>
                     </button>
                     <button class="btn btn-primary">
-                        <?= I18N::translate('Zapisz') ?>
+                        <?= I18N::translate('Save') ?>
                     </button>
                 </div>
             </div>
