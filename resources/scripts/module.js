@@ -1,7 +1,7 @@
 var facesMid = null,
     facesFact = null,
     useSznupa = null,
-    facesMode = 'mark',
+    facesMode = 'zoom',
     facesIsMobile = new MobileDetect(window.navigator.userAgent).mobile() !== null;
 
 function facesRoute(controller, action) {
