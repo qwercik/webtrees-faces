@@ -58,7 +58,7 @@ return [
     'LBL_SZNUPA_ACTIVATE' => 'Activate Sznupa',
     'LBL_SZNUPA_ANALYZE' => 'Analyze',
     'LBL_SZNUPA_ANALYZE_AGAIN' => 'Analyze again',
-    'LBL_SZNUPA_ANALYZE_TITLE' => 'Ponownie analizuje zdjęcie i oznacza wykryte twarze. Nie edytuje jednak oznaczeń zapisanych w Webtrees',
+    'LBL_SZNUPA_ANALYZE_TITLE' => 'Analyzing the photo again and mark detected faces. However, it does not edit the markings saved in Webtrees',
     'LBL_SZNUPA_ANALYZE_QUEUED' => 'The image has been queued for analyzing',
     'LBL_SZNUPA_INVALID_CREDENTIALS' => 'Invalid Sznupa credentials',
     'LBL_SZNUPA_NO_DATA' => 'The image has no marks yet. Please mark some individuals or click "Analyze" button',
